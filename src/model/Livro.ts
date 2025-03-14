@@ -17,7 +17,7 @@ export class Livro {
     private quantDisponivel: number; // Quantidade disponível daquele exemplar
     private valorAquisicao: number; // Valor da arquisição do livro
     private statusLivroEmprestado: string; // Status do livro emprestado
-
+    private statusLivro: boolean = true;
     /**
     * Construtor da classe Livro
     * 
@@ -43,6 +43,7 @@ export class Livro {
         this.quantDisponivel = _quantDisponivel;
         this.valorAquisicao = _valorAquisicao;
         this.statusLivroEmprestado = _statusLivroEmprestimo;
+
     }
 
     //métodos GETTERS and SETTERS
@@ -216,6 +217,24 @@ export class Livro {
         this.statusLivroEmprestado = _statusLivroEmprestado;
     }
 
+    /**
+    * Retorna o status do livro
+    * @returns status do livro : statusLivroEmprestado
+    */
+    public getStatusLivro(): boolean {
+        return this.statusLivro;
+    }
+
+    /**
+     * Atribui o parâmetro ao atributo status livro emprestado
+     * 
+     * @param _statusLivro : statusLivro
+     */
+    public setStatusLivro(_statusLivro: boolean) {
+        this.statusLivro = _statusLivro;
+    }
+
+
     // MÉTODO PARA ACESSAR O BANCO DE DADOS
     // CRUD Create - READ - Update - Delete
 
@@ -252,6 +271,7 @@ export class Livro {
                 );
                 // adicionando o ID ao objeto
                 novoLivro.setIdLivro(livro.id_livro);
+                novoLivro.setStatusLivro(livro.status_livro);
 
                 // adicionando um livro na lista
                 listaDeLivros.push(novoLivro);
@@ -259,8 +279,8 @@ export class Livro {
 
             // retornado a lista de livros para quem chamou a função
             return listaDeLivros;
-        
-        // captura qualquer erro que aconteça
+
+            // captura qualquer erro que aconteça
         } catch (error) {
             // exibe detalhes do erro no console
             console.log(`Erro ao acessar o modelo: ${error}`);
@@ -308,7 +328,7 @@ export class Livro {
 
             // retorna o valor da variável de controle
             return insertResult;
-        // captura qualquer tipo de erro que possa acontecer
+            // captura qualquer tipo de erro que possa acontecer
         } catch (error) {
             // exibe detalhes do erro no console
             console.error(`Erro ao cadastrar livro: ${error}`);
@@ -327,13 +347,18 @@ export class Livro {
         let queryResult = false;
 
         try {
-            // Cria a consulta para rmeover empréstimo do banco de dados
-            const queryDeleteEmprestimoLivro = `DELETE FROM emprestimo WHERE id_livro=${id_livro}`;
-            // executa a query para remover empréstimo
+
+            // Cria a consulta (query) para remover o livro
+            const queryDeleteEmprestimoLivro = `UPDATE emprestimo
+                                                    SET status_emprestimo_registro = FALSE
+                                                    WHERE id_livro=${id_livro};`;
+            
             await database.query(queryDeleteEmprestimoLivro);
 
             // Construção da query SQL para deletar o Livro.
-            const queryDeleteLivro = `DELETE FROM Livro WHERE id_livro=${id_livro};`;
+            const queryDeleteLivro = `UPDATE Livro
+                                    SET status_livro = FALSE
+                                    WHERE id_livro=${id_livro};`;
 
             // Executa a query de exclusão e verifica se a operação foi bem-sucedida.
             await database.query(queryDeleteLivro)
@@ -346,7 +371,7 @@ export class Livro {
             // retorna o valor da variável de controle
             return queryResult;
 
-        // captura qualquer erro que possa acontecer
+            // captura qualquer erro que possa acontecer
         } catch (error) {
             // Exibe detalhes do erro no console
             console.log(`Erro na consulta: ${error}`);
@@ -386,7 +411,7 @@ export class Livro {
 
             // Retorna o resultado da operação para quem chamou a função.
             return queryResult;
-        // captura qualquer erro que possa acontecer
+            // captura qualquer erro que possa acontecer
         } catch (error) {
             // exibe detalhes do erro no console
             console.log(`Erro na consulta: ${error}`);
