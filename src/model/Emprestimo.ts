@@ -12,8 +12,7 @@ export class Emprestimo{
     private idLivro: number; // Identificador do livro que foi emprestado
     private dataEmprestimo: Date; // Data do empréstimo
     private dataDevolucao: Date; // Data da devolução do livro
-    private statusEmprestimo: string; // Status do empréstimo
-    private statusEmprestimoRegistro: boolean = true;
+    private statusEmprestimo: string; // Status do empréstimo 
 
      /**
      * Construtor da classe Emprestimos
@@ -137,24 +136,6 @@ export class Emprestimo{
         this.statusEmprestimo = _statusEmprestimo;
     }
 
-
-        /**
-     * Retorna o status do empréstimo
-     * @returns statusEmprestimo: status do empréstimo
-     */
-        public getStatusEmprestimoRegistro(): boolean {
-            return this.statusEmprestimoRegistro;
-        }
-    
-        /**
-         * Atribui o parâmetro ao atributo statusEmprestimo
-         * 
-         * @param _statusEmprestimoRegistro : status do empréstimo
-         */
-        public setStatusEmprestimoRegistro(_statusEmprestimoRegistro: boolean) {
-            this.statusEmprestimoRegistro = _statusEmprestimoRegistro;
-        }
-
     // MÉTODO PARA ACESSAR O BANCO DE DADOS
     // CRUD Create - READ - Update - Delete
 
@@ -171,12 +152,13 @@ export class Emprestimo{
             // Query para consulta no banco de dados
             const querySelectEmprestimo = `
                 SELECT e.id_emprestimo, e.id_aluno, e.id_livro,
-                       e.data_emprestimo, e.data_devolucao, e.status_emprestimo,
+                       e.data_emprestimo, e.data_devolucao, e.status_emprestimo, e.status_emprestimo_registro,
                        a.ra, a.nome, a.sobrenome, a.celular, 
                        l.titulo, l.autor, l.editora
                 FROM Emprestimo e
                 JOIN Aluno a ON e.id_aluno = a.id_aluno
-                JOIN Livro l ON e.id_livro = l.id_livro;
+                JOIN Livro l ON e.id_livro = l.id_livro
+                WHERE e.status_emprestimo_registro = TRUE;
             `;
     
             // Executa a query no banco de dados
@@ -197,6 +179,7 @@ export class Emprestimo{
                     dataEmprestimo: linha.data_emprestimo,
                     dataDevolucao: linha.data_devolucao,
                     statusEmprestimo: linha.status_emprestimo,
+                    statusEmprestimoRegistro: linha.status_emprestimo_registro,
                     aluno: {
                         ra: linha.ra,
                         nome: linha.nome,
@@ -275,44 +258,6 @@ export class Emprestimo{
         }
     }    
 
-
-       /**
-     * Remove um livro do banco de dados
-     * @param idEmprestimo ID do livro a ser removido
-     * @returns Boolean indicando se a remoção foi bem-sucedida
-    */
-       static async removerEmprestimo(id_emprestimo: number): Promise<Boolean> {
-        // variável de controle da execução da query
-        let queryResult = false;
-
-        try {
-
-            // Construção da query SQL para deletar o Livro.
-            const queryDeleteEmprestimo = `UPDATE emprestimo
-                                    SET status_emprestimo_registro = FALSE
-                                    WHERE id_emprestimo=${id_emprestimo};`;
-
-            // Executa a query de exclusão e verifica se a operação foi bem-sucedida.
-            await database.query(queryDeleteEmprestimo)
-                .then((result) => {
-                    if (result.rowCount != 0) {
-                        queryResult = true; // Se a operação foi bem-sucedida, define queryResult como true.
-                    }
-                });
-
-            // retorna o valor da variável de controle
-            return queryResult;
-
-            // captura qualquer erro que possa acontecer
-        } catch (error) {
-            // Exibe detalhes do erro no console
-            console.log(`Erro na consulta: ${error}`);
-            // retorna o valor fa variável de controle
-            return queryResult;
-        }
-    }
-
-
      /**
      * Atualiza os dados de um empréstimo existente no banco de dados
      * 
@@ -357,6 +302,46 @@ export class Emprestimo{
             console.error(`Erro ao atualizar empréstimo: ${error}`);
             // lança um novo erro
             throw new Error('Erro ao atualizar o empréstimo.');
+        }
+    }
+
+    /**
+     * Remove um emprétimo ativo do banco de dados
+     * 
+     * @param idEmprestimo 
+     * @returns **true** caso o empréstimo tenha sido resolvido, **false** caso contrário
+     */
+    static async removerEmprestimo(idEmprestimo: number): Promise<boolean> {
+        // variável de controle da query
+        let queryResult = false;
+
+        // tenta executar a query
+        try {
+            // monta a query
+            const queryDeleteEmprestimo = `UPDATE emprestimo 
+                                            SET status_emprestimo_registro = FALSE
+                                            WHERE id_emprestimo=${idEmprestimo}`;
+
+            // executa a query e armazena a resposta
+            const respostaBD = await database.query(queryDeleteEmprestimo);
+
+            // verifica se a quantidade de linhas retornadas é diferente de 0
+            if(respostaBD.rowCount != 0) {
+                // exibe mensagem de sucesso
+                console.log('Empréstimo removido com sucesso!');
+                // altera o valor da variável para true
+                queryResult = true;
+            }
+
+            // retorna a resposta
+            return queryResult;
+
+        // captura qualquer erro que possa acontecer
+        } catch (error) {
+            // exibe detalhes do erro no console
+            console.log(`Erro ao remover empréstimo: ${error}`);
+            // retorna a resposta
+            return queryResult;
         }
     }
 }
